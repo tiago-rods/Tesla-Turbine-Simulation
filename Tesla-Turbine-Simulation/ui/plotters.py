@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+# pyrefly: ignore [missing-import]
 import customtkinter as ctk
 
 class SimulationPlotter:

@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 import customtkinter as ctk
 from .plotters import SimulationPlotter
 from core.geometry import TurbineGeometry
