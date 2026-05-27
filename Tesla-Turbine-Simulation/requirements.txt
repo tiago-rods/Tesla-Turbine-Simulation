@@ -1,4 +1,0 @@
-numpy>=1.20.0
-matplotlib>=3.4.0
-customtkinter>=5.0.0
-pytest>=7.0.0
