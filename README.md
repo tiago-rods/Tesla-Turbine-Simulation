@@ -8,7 +8,7 @@ O sistema possui um motor físico (`SimulationEngine`) que calcula e demonstra o
 
 * **Dinâmica de Fluidos:** Calcula as forças de arrasto viscoso e adesão da camada limite que impulsionam os discos. Calcula também o número de Reynolds.
 * **Fluidos Suportados:** A simulação permite trabalhar com fluidos de diferentes densidades e viscosidades, incluindo **Ar Comprimido**, **Água** e **Vapor de Baixa Pressão**.
-* **Física do Rotor:** Modelagem da geometria da turbina (ex: utilizando discos de CD comuns), calculando a massa, o espaçamento entre discos e o Momento de Inércia do sistema.
+* **Física do Rotor:** Modelagem da geometria da turbina (ex: utilizando discos comuns), calculando a massa, o espaçamento entre discos e o Momento de Inércia do sistema.
 * **Desempenho (Torque e Eficiência):** Computa em tempo real o torque viscoso gerado, as perdas mecânicas (atrito nos rolamentos) e a eficiência global da máquina. A velocidade angular (RPM) é calculada ao longo do tempo.
 * **Interface Gráfica (GUI):** Conta com uma aplicação com interface visual (`ui/app.py`) para facilitar o controle dos parâmetros e a visualização dos resultados.
 
