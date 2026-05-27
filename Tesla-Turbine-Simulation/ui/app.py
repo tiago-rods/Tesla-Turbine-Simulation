@@ -1,4 +1,7 @@
 # pyrefly: ignore [missing-import]
+import csv
+from tkinter import filedialog, messagebox
+# pyrefly: ignore [missing-import]
 import customtkinter as ctk
 from .plotters import SimulationPlotter
 from core.geometry import TurbineGeometry
@@ -86,14 +89,30 @@ class TeslaTurbineApp(ctk.CTk):
 
         # Botão Simular
         self.btn_simulate = ctk.CTkButton(self.control_frame, text="Re-Simular", command=self._run_simulation)
-        self.btn_simulate.pack(fill="x", padx=20, pady=30)
+        self.btn_simulate.pack(fill="x", padx=20, pady=10)
+
+        # Botões de Análise (Sprint 3)
+        self.frame_analysis = ctk.CTkFrame(self.control_frame, fg_color="transparent")
+        self.frame_analysis.pack(fill="x", padx=20, pady=5)
+        
+        self.btn_save_curve = ctk.CTkButton(self.frame_analysis, text="Salvar Baseline", command=self._save_baseline, width=100)
+        self.btn_save_curve.pack(side="left", padx=(0, 5), expand=True)
+        
+        self.btn_clear_curve = ctk.CTkButton(self.frame_analysis, text="Limpar Baseline", command=self._clear_baseline, width=100, fg_color="gray")
+        self.btn_clear_curve.pack(side="left", padx=(5, 0), expand=True)
+
+        self.btn_export = ctk.CTkButton(self.control_frame, text="Exportar CSV (Relatório)", command=self._export_csv, fg_color="#27ae60", hover_color="#2ecc71")
+        self.btn_export.pack(fill="x", padx=20, pady=10)
 
         # Labels de Resultados
         self.lbl_result_rpm = ctk.CTkLabel(self.control_frame, text="RPM Máximo: --", font=("Inter", 14, "bold"))
-        self.lbl_result_rpm.pack(pady=5)
+        self.lbl_result_rpm.pack(pady=2)
         
         self.lbl_result_eff = ctk.CTkLabel(self.control_frame, text="Rendimento Máximo: --", font=("Inter", 14, "bold"))
-        self.lbl_result_eff.pack(pady=5)
+        self.lbl_result_eff.pack(pady=2)
+
+        self.lbl_result_loss = ctk.CTkLabel(self.control_frame, text="Perda Térmica/Viscosa: -- W", font=("Inter", 12))
+        self.lbl_result_loss.pack(pady=2)
 
     def _update_pressure_label(self, value):
         self.lbl_pressure.configure(text=f"{float(value):.1f} kPa")
@@ -147,5 +166,58 @@ class TeslaTurbineApp(ctk.CTk):
         # Atualiza métricas na UI
         max_rpm = max(self.engine.history["rpm"])
         max_eff = max(self.engine.history["efficiency"])
+        
+        # Perdas = Power In - Power Out no estado estacionário final
+        p_in = self.engine.history["power_in"][-1]
+        p_out = self.engine.history["power_out"][-1]
+        loss_w = p_in - p_out
+
         self.lbl_result_rpm.configure(text=f"RPM Máximo: {max_rpm:.1f}")
         self.lbl_result_eff.configure(text=f"Rendimento Máximo: {max_eff:.1f} %")
+        self.lbl_result_loss.configure(text=f"Perda Térmica/Viscosa: {loss_w:.1f} W")
+
+    def _save_baseline(self):
+        if self.engine:
+            self.plotter.save_baseline(
+                self.engine.history["time"],
+                self.engine.history["rpm"],
+                self.engine.history["torque_gen"],
+                self.engine.history["torque_losses"]
+            )
+            self._run_simulation() # Re-renderiza para mostrar a baseline cinza
+            
+    def _clear_baseline(self):
+        self.plotter.clear_baseline()
+        self._run_simulation()
+
+    def _export_csv(self):
+        if not self.engine:
+            return
+            
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+            title="Exportar Dados da Simulação"
+        )
+        
+        if filepath:
+            try:
+                with open(filepath, mode='w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["Tempo (s)", "RPM", "Torque Gerado (N.m)", "Perdas (N.m)", "Potência Entrada (W)", "Potência Saída (W)", "Rendimento (%)", "Reynolds"])
+                    
+                    hist = self.engine.history
+                    for i in range(len(hist["time"])):
+                        writer.writerow([
+                            f"{hist['time'][i]:.4f}",
+                            f"{hist['rpm'][i]:.2f}",
+                            f"{hist['torque_gen'][i]:.6f}",
+                            f"{hist['torque_losses'][i]:.6f}",
+                            f"{hist['power_in'][i]:.2f}",
+                            f"{hist['power_out'][i]:.2f}",
+                            f"{hist['efficiency'][i]:.2f}",
+                            f"{hist['reynolds'][i]:.1f}"
+                        ])
+                messagebox.showinfo("Sucesso", f"Dados exportados para {filepath}")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Falha ao exportar CSV:\n{str(e)}")

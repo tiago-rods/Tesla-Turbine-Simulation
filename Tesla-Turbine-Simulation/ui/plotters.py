@@ -21,6 +21,22 @@ class SimulationPlotter:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.parent)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(fill=ctk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Curvas salvas para comparação
+        self.baseline_data = None
+
+    def save_baseline(self, time_data: list, rpm_data: list, torque_gen: list, torque_loss: list):
+        """Salva a curva atual como baseline para comparação."""
+        self.baseline_data = {
+            "time": list(time_data),
+            "rpm": list(rpm_data),
+            "torque_gen": list(torque_gen),
+            "torque_loss": list(torque_loss)
+        }
+
+    def clear_baseline(self):
+        """Limpa a curva de comparação."""
+        self.baseline_data = None
 
     def update_plots(self, time_data: list, rpm_data: list, torque_gen: list, torque_loss: list):
         """
@@ -29,8 +45,15 @@ class SimulationPlotter:
         self.ax_rpm.clear()
         self.ax_torque.clear()
 
+        # Plot baseline if exists
+        if self.baseline_data:
+            self.ax_rpm.plot(self.baseline_data["time"], self.baseline_data["rpm"], 
+                             color='gray', linestyle=':', linewidth=2, label='Baseline (RPM)')
+            self.ax_torque.plot(self.baseline_data["rpm"], self.baseline_data["torque_gen"], 
+                                color='gray', linestyle=':', linewidth=2, label='Baseline (Torque Gerado)')
+
         # Configurações do Gráfico de RPM
-        self.ax_rpm.plot(time_data, rpm_data, color='#00a8ff', linewidth=2, label='Rotação (RPM)')
+        self.ax_rpm.plot(time_data, rpm_data, color='#00a8ff', linewidth=2, label='Atual (RPM)')
         self.ax_rpm.set_title('Dinâmica de Rotação (Spin-up)', color='white')
         self.ax_rpm.set_xlabel('Tempo (s)', color='lightgray')
         self.ax_rpm.set_ylabel('RPM', color='lightgray')
@@ -38,8 +61,8 @@ class SimulationPlotter:
         self.ax_rpm.legend()
 
         # Configurações do Gráfico de Torque (Gerado vs Perdas)
-        self.ax_torque.plot(rpm_data, torque_gen, color='#44bd32', linewidth=2, label='Torque Viscoso')
-        self.ax_torque.plot(rpm_data, torque_loss, color='#e84118', linewidth=2, label='Perdas Mecânicas')
+        self.ax_torque.plot(rpm_data, torque_gen, color='#44bd32', linewidth=2, label='Atual (Torque Viscoso)')
+        self.ax_torque.plot(rpm_data, torque_loss, color='#e84118', linewidth=2, label='Atual (Perdas Mecânicas)')
         self.ax_torque.set_title('Torque vs Rotação', color='white')
         self.ax_torque.set_xlabel('Rotação (RPM)', color='lightgray')
         self.ax_torque.set_ylabel('Torque (N·m)', color='lightgray')
