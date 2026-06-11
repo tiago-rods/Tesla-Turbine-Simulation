@@ -59,7 +59,7 @@ class SimulationEngine:
         Equação fundamental de dinâmica rotacional da turbina.
         """
         t_gen = TeslaTurbinePhysics.viscous_torque_generated(
-            self.geometry, self.fluid, self.inlet_pressure, omega
+            self.geometry, self.fluid, self.inlet_pressure, omega, self.flow_rate
         )
         t_losses = TeslaTurbinePhysics.friction_losses_torque(
             self.geometry, self.fluid, omega
@@ -75,13 +75,13 @@ class SimulationEngine:
         """Avança a simulação em um passo de tempo dt."""
         # Salva o estado atual no histórico antes do passo
         t_gen = TeslaTurbinePhysics.viscous_torque_generated(
-            self.geometry, self.fluid, self.inlet_pressure, self.angular_velocity
+            self.geometry, self.fluid, self.inlet_pressure, self.angular_velocity, self.flow_rate
         )
         t_losses = TeslaTurbinePhysics.friction_losses_torque(
             self.geometry, self.fluid, self.angular_velocity
         )
         
-        v_fluid_tangential = TeslaTurbinePhysics.tangential_fluid_velocity(self.inlet_pressure, self.fluid)
+        v_fluid_tangential = TeslaTurbinePhysics.tangential_fluid_velocity(self.inlet_pressure, self.fluid, self.geometry)
         reynolds = TeslaTurbinePhysics.reynolds_number(self.fluid, v_fluid_tangential, self.geometry.disc_spacing)
         
         p_in = TeslaTurbinePhysics.input_hydraulic_power(self.inlet_pressure, self.flow_rate)

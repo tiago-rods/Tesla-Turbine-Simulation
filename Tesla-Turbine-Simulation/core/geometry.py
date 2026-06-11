@@ -13,6 +13,8 @@ class TurbineGeometry:
         num_discs: int = 5,              # N - número de discos
         disc_thickness: float = 0.0012,  # Espessura do disco (1.2mm para CD)
         disc_density: float = 1200.0,    # Densidade do material (Policarbonato/CD = ~1200 kg/m³)
+        nozzle_efficiency: float = 0.85, # C_v - coeficiente de velocidade do bocal
+        nozzle_area: float = 0.0005,     # A (m²) - área da seção transversal do bocal
     ):
         self.outer_radius = outer_radius
         self.inner_radius = inner_radius
@@ -20,6 +22,8 @@ class TurbineGeometry:
         self.num_discs = num_discs
         self.disc_thickness = disc_thickness
         self.disc_density = disc_density
+        self.nozzle_efficiency = nozzle_efficiency
+        self.nozzle_area = nozzle_area
 
     @property
     def disc_volume(self) -> float:

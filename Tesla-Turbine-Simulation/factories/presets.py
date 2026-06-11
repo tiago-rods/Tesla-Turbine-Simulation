@@ -20,7 +20,9 @@ class TurbineSimulationPresetFactory:
             disc_spacing=0.001,     # 1mm
             num_discs=5,
             disc_thickness=0.0012,  # 1.2mm
-            disc_density=1200.0     # Policarbonato
+            disc_density=1200.0,    # Policarbonato
+            nozzle_efficiency=0.85,
+            nozzle_area=0.00005     # 50 mm^2 (bocal pequeno para compressor de ar)
         )
         fluid = Air(temperature_c=25.0)
         # Pressão típica de compressor doméstico (~2 bar relativos = ~200000 Pa)
@@ -38,7 +40,9 @@ class TurbineSimulationPresetFactory:
             disc_spacing=0.0005,    # 0.5mm
             num_discs=20,
             disc_thickness=0.002,   # 2mm aço
-            disc_density=7800.0     # Aço
+            disc_density=7800.0,    # Aço
+            nozzle_efficiency=0.90,
+            nozzle_area=0.001       # 10 cm^2 (bocal grande para água)
         )
         fluid = Water()
         # Queda de pressão de ~5 bar (500000 Pa)

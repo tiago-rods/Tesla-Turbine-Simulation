@@ -17,27 +17,31 @@ class TeslaTurbinePhysics:
         return (fluid.density * velocity * spacing) / fluid.viscosity
 
     @staticmethod
-    def tangential_fluid_velocity(inlet_pressure: float, fluid: BaseFluid) -> float:
+    def tangential_fluid_velocity(inlet_pressure: float, fluid: BaseFluid, geometry: TurbineGeometry) -> float:
         """
-        Estima a velocidade tangencial de entrada do fluido no bocal usando a equação de Bernoulli simplificada:
-        v = sqrt(2 * delta_P / rho)
+        Estima a velocidade tangencial de entrada do fluido no bocal usando a equação de Bernoulli simplificada
+        com o coeficiente de velocidade do bocal (nozzle efficiency):
+        v = C_v * sqrt(2 * delta_P / rho)
         """
         if fluid.density <= 0:
             return 0.0
-        return np.sqrt(2.0 * inlet_pressure / fluid.density)
+        c_v = getattr(geometry, 'nozzle_efficiency', 1.0)
+        return c_v * np.sqrt(2.0 * inlet_pressure / fluid.density)
 
     @staticmethod
     def viscous_torque_generated(
         geometry: TurbineGeometry,
         fluid: BaseFluid,
         inlet_pressure: float,
-        rotor_angular_velocity: float
+        rotor_angular_velocity: float,
+        flow_rate: float
     ) -> float:
         """
         Calcula o torque viscoso exercido pelo fluido sobre os discos.
-        Derivado da força de cisalhamento viscoso entre discos paralelos.
+        Derivado da força de cisalhamento viscoso entre discos paralelos,
+        e limitado pela equação de turbomáquinas de Euler.
         """
-        v_fluid_tangential = TeslaTurbinePhysics.tangential_fluid_velocity(inlet_pressure, fluid)
+        v_fluid_tangential = TeslaTurbinePhysics.tangential_fluid_velocity(inlet_pressure, fluid, geometry)
         r_in = geometry.outer_radius
         r_out = geometry.inner_radius
         b = geometry.disc_spacing
@@ -52,9 +56,17 @@ class TeslaTurbinePhysics:
 
         # Torque viscoso integrado sob a simplificação de perfil de velocidade linear na folga
         # T = N * integral de (r * dF_cisalhamento)
-        # T_viscoso_aprox = (4 * pi * mu * N * (r_in^4 - r_out^4) / b) * slip
         factor = (4.0 * np.pi * mu * N * (r_in**4 - r_out**4)) / b
-        return factor * slip
+        raw_torque = factor * slip
+        
+        # Limite de Euler para conservação de momento angular máximo do fluxo
+        # T_max = mass_flow * (r_in * v_in - r_out * v_out) -> Teto máximo = mass_flow * r_in * v_in
+        mass_flow = flow_rate * fluid.density
+        euler_torque_limit = mass_flow * r_in * v_fluid_tangential
+        
+        if raw_torque > 0:
+            return min(raw_torque, euler_torque_limit)
+        return raw_torque
 
     @staticmethod
     def friction_losses_torque(
@@ -101,4 +113,4 @@ class TeslaTurbinePhysics:
         if power_in <= 0:
             return 0.0
         eff = power_out / power_in
-        return max(0.0, min(eff, 1.0)) # Limitado entre 0 e 100% fisicamente
+        return max(0.0, eff)
