@@ -43,6 +43,17 @@ class TeslaTurbineApp(ctk.CTk):
         """Constrói os widgets de controle (Sliders)."""
         ctk.CTkLabel(self.control_frame, text="Parâmetros Físicos", font=("Inter", 20, "bold")).pack(pady=10)
 
+        # Modelo (Preset)
+        ctk.CTkLabel(self.control_frame, text="Modelo da Turbina:").pack(anchor="w", padx=20, pady=(10, 0))
+        self.preset_var = ctk.StringVar(value="Protótipo de CDs")
+        self.preset_combo = ctk.CTkComboBox(
+            self.control_frame, 
+            values=["Protótipo de CDs", "Padrão Industrial"],
+            variable=self.preset_var,
+            command=self._on_preset_change
+        )
+        self.preset_combo.pack(fill="x", padx=20, pady=5)
+
         # Fluido
         ctk.CTkLabel(self.control_frame, text="Tipo de Fluido:").pack(anchor="w", padx=20, pady=(10, 0))
         self.fluid_var = ctk.StringVar(value="Ar Comprimido")
@@ -131,6 +142,25 @@ class TeslaTurbineApp(ctk.CTk):
             return Steam()
         return Air()
 
+    def _on_preset_change(self, choice):
+        if choice == "Padrão Industrial":
+            self.fluid_var.set("Água")
+            self.pressure_val.set(500.0)
+            self._update_pressure_label(500.0)
+            self.discs_val.set(20)
+            self._update_discs_label(20)
+            self.spacing_val.set(0.5)
+            self._update_spacing_label(0.5)
+        else:
+            self.fluid_var.set("Ar Comprimido")
+            self.pressure_val.set(200.0)
+            self._update_pressure_label(200.0)
+            self.discs_val.set(5)
+            self._update_discs_label(5)
+            self.spacing_val.set(1.0)
+            self._update_spacing_label(1.0)
+        self._run_simulation()
+
     def _run_simulation(self):
         """Atualiza modelo com os dados da UI e dispara simulação no Engine."""
         fluid = self._get_selected_fluid()
@@ -138,17 +168,33 @@ class TeslaTurbineApp(ctk.CTk):
         spacing_m = self.spacing_val.get() / 1000.0 # mm para m
         discs = int(self.discs_val.get())
 
-        geom = TurbineGeometry(
-            outer_radius=0.06,
-            inner_radius=0.015,
-            disc_spacing=spacing_m,
-            num_discs=discs,
-            disc_thickness=0.0012,
-            disc_density=1200.0
-        )
-        
-        # Vazão aproximada em função da pressão para manter MVP simples (Q ~ P^0.5)
-        flow_rate = 0.003 * (pressure_pa / 200000.0)**0.5
+        preset = self.preset_var.get()
+        if preset == "Padrão Industrial":
+            geom = TurbineGeometry(
+                outer_radius=0.25,
+                inner_radius=0.05,
+                disc_spacing=spacing_m,
+                num_discs=discs,
+                disc_thickness=0.002,
+                disc_density=7800.0,
+                nozzle_efficiency=0.90,
+                nozzle_area=0.001
+            )
+            # Vazão baseada na pressão (Q ~ P^0.5). Industrial usa mais vazão.
+            flow_rate = 0.01 * (pressure_pa / 500000.0)**0.5
+        else:
+            geom = TurbineGeometry(
+                outer_radius=0.06,
+                inner_radius=0.015,
+                disc_spacing=spacing_m,
+                num_discs=discs,
+                disc_thickness=0.0012,
+                disc_density=1200.0,
+                nozzle_efficiency=0.85,
+                nozzle_area=0.00005
+            )
+            # Vazão aproximada em função da pressão para manter MVP simples (Q ~ P^0.5)
+            flow_rate = 0.003 * (pressure_pa / 200000.0)**0.5
 
         self.engine = SimulationEngine(geom, fluid, inlet_pressure=pressure_pa, flow_rate=flow_rate)
         
