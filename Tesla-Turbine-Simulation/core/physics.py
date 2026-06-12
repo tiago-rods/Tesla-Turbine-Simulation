@@ -1,6 +1,7 @@
-import numpy as np
 from .fluid import BaseFluid
 from .geometry import TurbineGeometry
+import numpy as np
+
 
 class TeslaTurbinePhysics:
     """
